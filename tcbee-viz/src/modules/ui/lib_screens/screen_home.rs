@@ -190,9 +190,9 @@ impl Screen for ScreenHome {
     }
 
     fn content(&self) -> Element<'_, Self::Message> {
-        let headline_app = text("TCP-Analysis-Tool").size(40);
+        let headline_app = text("TCQueen").size(35);
         let app_infos =
-            text("\nwith love by Evelyn Esther Aurora Stange").size(TEXT_HEADLINE_2_SIZE);
+            text("with love by Evelyn Esther Aurora Stange").size(TEXT_HEADLINE_2_SIZE);
         let sidebar = self.display_sidebar();
         let explanation_field = self.display_explanation();
 
@@ -200,7 +200,7 @@ impl Screen for ScreenHome {
             .height(Length::Shrink)
             .spacing(SPACE_BETWEEN_ELEMENTS)
             .push(headline_app)
-            .push(app_infos)
+            // .push(app_infos)
             .into();
 
         let inner_content: Element<'_, MessageHome> = Row::new()
@@ -209,14 +209,15 @@ impl Screen for ScreenHome {
             .push(explanation_field)
             .into();
 
-        let window_content: Element<'_, MessageHome> = generate_padded_layout::<MessageHome>(PADDING_AROUND_CONTENT)
-            .push(headline_content)
-            .push(inner_content)
-            .into();
+        let window_content: Element<'_, MessageHome> =
+            generate_padded_layout::<MessageHome>(PADDING_AROUND_CONTENT)
+                .push(headline_content)
+                .push(app_infos)
+                .spacing(SPACE_BETWEEN_ELEMENTS)
+                .push(inner_content)
+                .into();
         // let window_content = generate_one_fourth_layout::<MessageHome>(headline_content, sidebar, explanation_field)
         window_content.map(Message::ScreenHome)
     }
-    fn reset(&mut self) {
-        
-    }
+    fn reset(&mut self) {}
 }

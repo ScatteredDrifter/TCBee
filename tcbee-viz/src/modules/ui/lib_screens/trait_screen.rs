@@ -35,5 +35,4 @@ pub trait Screen {
     }
 
     fn reset(&mut self);
-
 }

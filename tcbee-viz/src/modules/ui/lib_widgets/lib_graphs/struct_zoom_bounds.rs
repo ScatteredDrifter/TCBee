@@ -138,63 +138,61 @@ pub fn retrieve_default_zoom_for_two_flows(
     app_settings: &Arc<RwLock<ApplicationSettings>>,
     first_flow: &TcpFlowWrapper,
     second_flow: &TcpFlowWrapper,
-) -> ZoomBound2D { 
+) -> ZoomBound2D {
     let range_1 = retrieve_default_zoom_for_one_flow(app_settings, first_flow);
-    let range_2 =  retrieve_default_zoom_for_one_flow(app_settings,second_flow);
+    let range_2 = retrieve_default_zoom_for_one_flow(app_settings, second_flow);
     merge_two_2d_bounds(&range_1, &range_2)
 }
 
 pub fn retrieve_max_series_bound_of_two_flows(
-    app_settings:&Arc<RwLock<ApplicationSettings>>,
-    first_flow:&TcpFlowWrapper,
-    second_flow:&TcpFlowWrapper
-) -> Option<ZoomBound>{
+    app_settings: &Arc<RwLock<ApplicationSettings>>,
+    first_flow: &TcpFlowWrapper,
+    second_flow: &TcpFlowWrapper,
+) -> Option<ZoomBound> {
     let read_settings = app_settings.read().unwrap();
     let backend_connection = &read_settings.intermediate_interface;
-    let maybe_first_bounds = backend_connection.receive_active_series_max_bounds(first_flow.selected_series.clone());
-    let maybe_second_bounds = backend_connection.receive_active_series_max_bounds(second_flow.selected_series.clone());
+    let maybe_first_bounds =
+        backend_connection.receive_active_series_max_bounds(first_flow.selected_series.clone());
+    let maybe_second_bounds =
+        backend_connection.receive_active_series_max_bounds(second_flow.selected_series.clone());
     match maybe_first_bounds {
-        Some(first_bound) => {
-            match maybe_second_bounds {
-                Some(second_bound) => {
-                    Some(merge_two_bounds(&first_bound,&second_bound))
-                }
-                None => None
-            }
-        }
-        None => None
+        Some(first_bound) => match maybe_second_bounds {
+            Some(second_bound) => Some(merge_two_bounds(&first_bound, &second_bound)),
+            None => None,
+        },
+        None => None,
     }
 }
 
 pub fn generate_zoom_bounds_from_coordinates_in_data(ref_data: &ProcessedPlotData) -> ZoomBound2D {
-        if let Some(coord_start) = ref_data 
-            .first_pressed_position
-            .zip(ref_data.second_pressed_position)
-        {
-            // obtained new boundaries
-            if points_are_close(&coord_start.0, &coord_start.1) {
-                println!("points too close, aborting");
-                // return self.zoom_bounds.clone().unwrap_or_default();
-                return ref_data.zoom_bounds.clone();
-            }
-            let min_x = coord_start.0 .0.min(coord_start.1 .0);
-            let max_x = coord_start.0 .0.max(coord_start.1 .0);
-            let min_y = coord_start.0 .1.min(coord_start.1 .1);
-            let max_y = coord_start.0 .1.max(coord_start.1 .1);
-
-            let x_bound = ZoomBound {
-                lower: min_x,
-                upper: max_x,
-            };
-            let y_bound = ZoomBound {
-                lower: min_y,
-                upper: max_y,
-            };
-            ZoomBound2D {
-                x: x_bound,
-                y: y_bound,
-            }
-        } else {
-            ref_data.zoom_bounds.clone()
+    if let Some(coord_start) = ref_data
+        .first_pressed_position
+        .zip(ref_data.second_pressed_position)
+    {
+        // obtained new boundaries
+        if points_are_close(&coord_start.0, &coord_start.1) {
+            println!("points too close, aborting");
+            // return self.zoom_bounds.clone().unwrap_or_default();
+            return ref_data.zoom_bounds.clone();
         }
+        let min_x = coord_start.0 .0.min(coord_start.1 .0);
+        let max_x = coord_start.0 .0.max(coord_start.1 .0);
+        let min_y = coord_start.0 .1.min(coord_start.1 .1);
+        let max_y = coord_start.0 .1.max(coord_start.1 .1);
+
+        let x_bound = ZoomBound {
+            lower: min_x,
+            upper: max_x,
+        };
+        let y_bound = ZoomBound {
+            lower: min_y,
+            upper: max_y,
+        };
+        ZoomBound2D {
+            x: x_bound,
+            y: y_bound,
+        }
+    } else {
+        ref_data.zoom_bounds.clone()
     }
+}

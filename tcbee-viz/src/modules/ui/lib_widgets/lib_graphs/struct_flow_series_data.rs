@@ -64,7 +64,10 @@ impl FlowSeriesData {
 }
 
 impl FlowSeriesData {
-    pub fn view<'a, Message: 'static + Clone> (&'a self, is_debug_view: bool) -> Element<'a, Message> {
+    pub fn view<'a, Message: 'static + Clone>(
+        &'a self,
+        is_debug_view: bool,
+    ) -> Element<'a, Message> {
         let content: Element<'_, Message> = Container::new(ChartWidget::new(self))
             .width(Length::Fill)
             .height(self.chart_height)

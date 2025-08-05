@@ -2,26 +2,21 @@
 //  also containing its related methods
 
 // internal imports
-use crate::{
-    ApplicationSettings, Arc, FlowSeriesData,RefCell, RwLock,
-};
+use crate::{ApplicationSettings, Arc, FlowSeriesData, RefCell, RwLock};
 
-use plotters::{
-    coord::types::RangedCoordf64,
-    prelude::Cartesian2d,
-};
+use plotters::{coord::types::RangedCoordf64, prelude::Cartesian2d};
 
 use plotters_iced::ChartWidget;
 
 use iced::{
-    widget::{
-        canvas::Cache,
-        Container,
-    },
+    widget::{canvas::Cache, Container},
     Element,
 };
 
-use super::{single_chart_processed_plot_data::MessageCreator, struct_zoom_bounds::{merge_two_2d_bounds, ZoomBound2D}};
+use super::{
+    single_chart_processed_plot_data::MessageCreator,
+    struct_zoom_bounds::{merge_two_2d_bounds, ZoomBound2D},
+};
 
 pub struct ProcessedPlotData {
     // denotes name of plot to generate --> i.e. for flow X
@@ -42,10 +37,13 @@ pub struct ProcessedPlotData {
     pub first_pressed_position: Option<(f64, f64)>,
     pub second_pressed_position: Option<(f64, f64)>,
     pub app_settings: Arc<RwLock<ApplicationSettings>>,
+    pub generate_y_bounds: bool,
 }
 
 impl ProcessedPlotData {
-    pub fn create_single_chart<Message: 'static + Clone + MessageCreator> (ref_data: &ProcessedPlotData) -> Element<'_, Message> {
+    pub fn create_single_chart<Message: 'static + Clone + MessageCreator>(
+        ref_data: &ProcessedPlotData,
+    ) -> Element<'_, Message> {
         let content: Container<'_, Message> = Container::new(ChartWidget::new(ref_data));
         content.into()
     }
@@ -70,6 +68,7 @@ impl ProcessedPlotData {
             first_pressed_position: None,
             second_pressed_position: None,
             app_settings: self.app_settings.clone(),
+            generate_y_bounds: false,
         }
     }
 
@@ -94,7 +93,12 @@ impl ProcessedPlotData {
             first_pressed_position: None,
             second_pressed_position: None,
             app_settings: self.app_settings.clone(),
+            generate_y_bounds: false,
         }
+    }
+
+    pub fn set_state_for_y_bound_generation(&mut self, new_state: bool) {
+        self.generate_y_bounds = new_state;
     }
 
     pub fn update_zoom_bounds(&mut self, new_zoom: ZoomBound2D) {

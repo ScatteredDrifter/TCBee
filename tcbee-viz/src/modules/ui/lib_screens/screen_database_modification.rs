@@ -20,7 +20,10 @@ use crate::{
         },
         ui::{
             lib_styling::app_style_settings::{
-                CHART_HEIGHT, HORIZONTAL_LINE_SECONDARY_HEIGHT, PADDING_AROUND_CONTENT, SPACE_BETWEEN_ELEMENTS, SPACE_BETWEEN_PLOT_ROWS, SPACE_BETWEEN_TEXT, SPLIT_CHART_MAX_HEIGHT, TEXT_HEADLINE_0_SIZE, TEXT_HEADLINE_1_SIZE, TEXT_HEADLINE_2_SIZE
+                CHART_HEIGHT, HORIZONTAL_LINE_SECONDARY_HEIGHT, PADDING_AROUND_CONTENT,
+                SPACE_BETWEEN_ELEMENTS, SPACE_BETWEEN_PLOT_ROWS, SPACE_BETWEEN_TEXT,
+                SPLIT_CHART_MAX_HEIGHT, TEXT_HEADLINE_0_SIZE, TEXT_HEADLINE_1_SIZE,
+                TEXT_HEADLINE_2_SIZE,
             },
             lib_widgets::{
                 app_widgets::{
@@ -451,11 +454,12 @@ impl Screen for ScreenModifyDatabase {
             .push(Rule::vertical(HORIZONTAL_LINE_SECONDARY_HEIGHT))
             .into();
 
-        let combined_content: Element<'_, MessageModifyDatabase> = generate_padded_layout(PADDING_AROUND_CONTENT)
-            .push(text("PROCESS").size(TEXT_HEADLINE_0_SIZE))
-            .push(Rule::horizontal(SPACE_BETWEEN_PLOT_ROWS * 4.0))
-            .push(inner_content)
-            .into();
+        let combined_content: Element<'_, MessageModifyDatabase> =
+            generate_padded_layout(PADDING_AROUND_CONTENT)
+                .push(text("PROCESS").size(TEXT_HEADLINE_0_SIZE))
+                .push(Rule::horizontal(SPACE_BETWEEN_PLOT_ROWS * 4.0))
+                .push(inner_content)
+                .into();
 
         combined_content.map(Message::ScreenModifyDatabase)
     }

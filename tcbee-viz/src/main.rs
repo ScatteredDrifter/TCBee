@@ -1,5 +1,5 @@
-// bundling logic for TCP-visual-analysis tool
-// authored by Evelyn Stange -> https://scattered-lenity.space
+// bundled logic for TCQueen
+// authored by Evelyn Esther Stange -> https://scattered-lenity.de
 
 // internal imports
 mod modules {
@@ -35,7 +35,7 @@ use iced_table::Table;
 
 use iced::Element;
 use iced_aw::Tabs;
-use ts_storage::{DataValue, TSDBInterface};
+use rust_ts_storage::{DataValue, TSDBInterface};
 use std::cell::RefCell;
 use std::sync::{Arc, RwLock};
 use std::thread::sleep;
@@ -46,8 +46,17 @@ use std::time::{Duration, Instant};
 
 // fn main() -> iced::Result {
 fn main() -> iced::Result {
-    println!("Hi, this application was written by Evelyn :>\n this message is a secret");
-    iced::application("TCPFLOW", StateContainer::update, StateContainer::view)
+
+    let ascii_name = r#"
+ _______________                  
+/_  __/ ___/ __ \__ _____ ___ ___ 
+ / / / /__/ /_/ / // / -_) -_) _ \
+/_/  \___/\___\_\_,_/\__/\__/_//_/
+                                  
+"#;
+    println!("Hi, this application was written by Eve\nThis message is a secret");
+    println!("{}",ascii_name);
+    iced::application("TCQueen", StateContainer::update, StateContainer::view)
         .theme(StateContainer::theme)
         .run()
 }
@@ -107,8 +116,8 @@ impl Default for StateContainer {
             screen_multi_flow_plotting: ScreenMultiFlowPlotting::new(settings.clone()),
             screen_modify_database: ScreenModifyDatabase::new(settings.clone()),
             application_settings: settings,
-            // theme: Theme::CatppuccinFrappe,
-            theme: Theme::GruvboxLight,
+            // theme: Theme::CatppuccinFrappe, // dark mode 
+            theme: Theme::Light,
         }
     }
 }
@@ -129,9 +138,7 @@ impl StateContainer {
                     ActiveScreen::MultipleGraphPlot => {
                         self.screen_multi_flow_plotting.reset();
                     }
-                    _ => {
-
-                    }
+                    _ => {}
                 }
                 self.screen = new_screen
             }

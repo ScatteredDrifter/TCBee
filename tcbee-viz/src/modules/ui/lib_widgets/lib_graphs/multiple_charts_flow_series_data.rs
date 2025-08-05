@@ -4,7 +4,7 @@
 use crate::modules::{
     backend::plot_data_preprocessing::{
         filter_false_boolean_from_data, prepare_bool, prepare_float, prepare_int,
-        retrieve_y_bounds_from_selected_range, skip_every_nth, skip_outside_of_bound,
+        retrieve_y_bounds_from_collection_of_points, skip_every_nth, skip_outside_of_bound,
     },
     ui::{
         lib_styling::app_style_settings::{
@@ -16,15 +16,13 @@ use crate::modules::{
     },
 };
 
-use crate::{
-    Element, FlowSeriesData, ProcessedPlotData, 
-};
+use crate::{Element, FlowSeriesData, ProcessedPlotData};
 use iced::widget::canvas::{Frame, Geometry};
 use iced::widget::{scrollable, Column};
 use iced::Size;
 
 // -- internal imports
-use ts_storage::DataValue;
+use rust_ts_storage::DataValue;
 // -- external imports
 
 use plotters::series::LineSeries;
@@ -37,20 +35,20 @@ use plotters::{
 
 use plotters_iced::{Chart, ChartBuilder, DrawingBackend, Renderer};
 
-    pub fn create_multiple_charts<Message: 'static + Clone>(
-        processed_data: &ProcessedPlotData,
-    ) -> Element<'_, Message> {
-        let read_settings = processed_data.app_settings.read().unwrap();
-        let debug_view = read_settings.display_debug;
+pub fn create_multiple_charts<Message: 'static + Clone>(
+    processed_data: &ProcessedPlotData,
+) -> Element<'_, Message> {
+    let read_settings = processed_data.app_settings.read().unwrap();
+    let debug_view = read_settings.display_debug;
 
-        let content: Column<'_, Message> = processed_data
-            .point_collection
-            .iter()
-            .map(|series_to_visualize| series_to_visualize.view(debug_view))
-            .collect();
-        scrollable(content).into()
-        // content.into()
-    }
+    let content: Column<'_, Message> = processed_data
+        .point_collection
+        .iter()
+        .map(|series_to_visualize| series_to_visualize.view(debug_view))
+        .collect();
+    scrollable(content).into()
+    // content.into()
+}
 
 impl<Message: 'static + Clone> Chart<Message> for FlowSeriesData {
     type State = ();
@@ -158,8 +156,7 @@ impl<Message: 'static + Clone> Chart<Message> for FlowSeriesData {
                 // FIXMe refactor to its own helper function!
                 // FIXME improve writing!
                 let converted_as_float = prepare_int(&only_in_bounds);
-                let chart_y_bounds =
-                    retrieve_y_bounds_from_selected_range(&only_in_bounds, &zoom_limits.y);
+                let chart_y_bounds = retrieve_y_bounds_from_collection_of_points(&only_in_bounds);
                 println!(
                     "previous bounds, read from zoom: lower {:?}, upper:{:?}",
                     zoom_limits.x.lower, zoom_limits.x.upper
@@ -195,8 +192,7 @@ impl<Message: 'static + Clone> Chart<Message> for FlowSeriesData {
 
             DataValue::Float(_) => {
                 let convert_as_float = prepare_float(&only_in_bounds);
-                let chart_y_bounds =
-                    retrieve_y_bounds_from_selected_range(&only_in_bounds, &zoom_limits.y);
+                let chart_y_bounds = retrieve_y_bounds_from_collection_of_points(&only_in_bounds);
 
                 let mut chart_float = base_chart
                     .build_cartesian_2d(

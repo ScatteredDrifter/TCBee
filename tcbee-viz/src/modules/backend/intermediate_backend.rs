@@ -2,7 +2,7 @@
 // manages and defines access to database / which source to use etc.
 
 use crate::modules::{
-    backend::plot_data_preprocessing::generate_n_random_colors,
+    backend::plot_data_preprocessing::retrieve_n_colors,
     ui::{
         lib_styling::app_style_settings::{DEFAULT_Y_MAX, DEFAULT_Y_MIN},
         lib_widgets::lib_graphs::{
@@ -16,9 +16,15 @@ use crate::modules::{
 use crate::TSDBInterface;
 use iced::widget::canvas::Cache;
 use plotters::style::RGBAColor;
-use ts_storage::{database_factory, sqlite::SQLiteTSDB, DBBackend, DataValue, Flow};
-use ts_storage::{DataPoint, TimeSeries};
-use std::{cell::RefCell, f64::{MAX, MIN}, path::PathBuf, slice::Iter, sync::RwLock};
+use rust_ts_storage::{database_factory, sqlite::SQLiteTSDB, DBBackend, DataValue, Flow};
+use rust_ts_storage::{DataPoint, TimeSeries};
+use std::{
+    cell::RefCell,
+    f64::{MAX, MIN},
+    path::PathBuf,
+    slice::Iter,
+    sync::RwLock,
+};
 
 // testing to adapt to issue of not refrencing well enough?
 use std::sync::Arc;
@@ -63,16 +69,13 @@ impl IntermediateBackend {
                 // if it was selected we know that its available!
                 let db_connection = self.database_interface.clone().unwrap();
                 let flow = db_connection.get_flow_by_id(*value).unwrap().unwrap();
-                let maybe_bounds = db_connection
-                    .get_flow_bounds(&flow);
-                match maybe_bounds{
-                    Ok(boundaries) => {
-                        Some(ZoomBound {
-                            lower: boundaries.xmin,
-                            upper: boundaries.xmax,
-                        })
-                    }
-                    _ => None 
+                let maybe_bounds = db_connection.get_flow_bounds(&flow);
+                match maybe_bounds {
+                    Ok(boundaries) => Some(ZoomBound {
+                        lower: boundaries.xmin,
+                        upper: boundaries.xmax,
+                    }),
+                    _ => None,
                 }
             }
             _ => None,
@@ -92,7 +95,7 @@ impl IntermediateBackend {
                 let boundaries = db_connection
                     .get_time_series_bounds(&series_id)
                     .expect("could not receive boundaries");
-                if let (Some(y_min),Some(y_max)) = (&boundaries.ymin , &boundaries.ymax) {
+                if let (Some(y_min), Some(y_max)) = (&boundaries.ymin, &boundaries.ymax) {
                     let lower = y_min;
                     let upper = y_max;
                     // guaranteed to be DataValue
@@ -119,7 +122,7 @@ impl IntermediateBackend {
                 lowest_y = old_constant - 10.0;
                 highest_y = old_constant + 10.0;
             }
-            
+
             return Some(ZoomBound {
                 lower: lowest_y,
                 upper: highest_y,
@@ -280,7 +283,7 @@ impl IntermediateBackend {
                 IntermediateBackend {
                     source_type: source.clone(),
                     database_interface: Some(db_interface),
-                    database_path: Some(PathBuf::from(path_db))
+                    database_path: Some(PathBuf::from(path_db)),
                 }
             }
             _ => IntermediateBackend {
@@ -394,7 +397,10 @@ impl IntermediateBackend {
         };
         // --- COLOR Generation
         let colors_to_generate = available_time_series.len();
-        let mut colors_for_series = generate_n_random_colors(colors_to_generate);
+        let settings_read = app_reference.read().unwrap();
+        let colorscheme = settings_read.graph_pointseries_color_scheme.clone();
+        
+        let mut colors_for_series = retrieve_n_colors(colorscheme,colors_to_generate);
 
         let collection_of_flow_series = self.collect_flowseries_from_timeseries(
             &db_interface,
@@ -417,6 +423,7 @@ impl IntermediateBackend {
             second_pressed_position: None,
             current_position: None,
             app_settings: app_reference.clone(),
+            generate_y_bounds: false,
         };
         Some(resulting_collection)
     }

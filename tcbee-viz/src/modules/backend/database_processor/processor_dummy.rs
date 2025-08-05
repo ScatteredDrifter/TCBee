@@ -3,7 +3,7 @@
 // operation of the module system
 
 use iced::widget::canvas::Cache;
-use ts_storage::DataValue;
+use rust_ts_storage::DataValue;
 
 // used to generate random data
 use rand::distr::{Distribution, Uniform};
@@ -24,8 +24,8 @@ impl Default for DummyProcessor {
     fn default() -> Self {
         DummyProcessor {
             required_timeseries_as_string: Vec::from([
-                "ack_num".to_string(),
-                "seq_num".to_string(),
+                "SND_CWND".to_string(),
+                // "SEQ_NUM".to_string(),
                 // "retransmission".to_string(),
             ]),
         }
@@ -60,7 +60,7 @@ Its written to provide means to understand and implement new modules
         let timestamps = first_series.timestamps.clone();
 
         let mut num_thread = rng();
-        let num_distribution = Uniform::new(40000000.0, 520000000.0).unwrap();
+        let num_distribution = Uniform::new(0.0, 50.0).unwrap();
         let new_values: Vec<DataValue> = timestamps
             .iter()
             .map(|_| {
@@ -70,7 +70,7 @@ Its written to provide means to understand and implement new modules
             .collect();
         let new_flow_series = FlowSeriesData {
             data: new_values.clone(),
-            name: "tst_rndm".to_string(),
+            name: "dummy_value".to_string(),
             timestamps: timestamps,
             max_timestamp: first_series.max_timestamp,
             min_timestamp: first_series.min_timestamp,

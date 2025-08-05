@@ -14,8 +14,9 @@ use iced_aw::TabLabel;
 // backend implementation
 use crate::modules::{
     backend::plot_data_preprocessing::{
-        filter_and_prepare_string_from_series, filter_for_string_values, generate_n_random_colors,
-        prepare_string_from_flow_series,
+        filter_and_prepare_string_from_series, filter_for_string_values, retrieve_n_colors,
+        prepare_string_from_flow_series, retrieve_y_bounds_from_collection_of_points,
+        retrieve_y_bounds_from_plot_data,
     },
     ui::{
         lib_styling::app_style_settings::{
@@ -32,9 +33,15 @@ use crate::modules::{
                 generate_render_button, generate_zoom_reset_button,
             },
             lib_graphs::{
-                multiple_charts_flow_series_data::create_multiple_charts, single_chart_processed_plot_data::MessageCreator, struct_flow_series_data::FlowSeriesData, struct_processed_plot_data::ProcessedPlotData, struct_zoom_bounds::{
-                    generate_zoom_bounds_from_coordinates_in_data, receive_flow_bounds, retrieve_default_zoom_for_one_flow, retrieve_max_series_bound, ZoomBound, ZoomBound2D
-                }
+                multiple_charts_flow_series_data::create_multiple_charts,
+                single_chart_processed_plot_data::MessageCreator,
+                struct_flow_series_data::FlowSeriesData,
+                struct_processed_plot_data::ProcessedPlotData,
+                struct_zoom_bounds::{
+                    generate_zoom_bounds_from_coordinates_in_data, receive_flow_bounds,
+                    retrieve_default_zoom_for_one_flow, retrieve_max_series_bound, ZoomBound,
+                    ZoomBound2D,
+                },
             },
         },
     },
@@ -168,16 +175,28 @@ impl ScreenSingleFlowPlotting {
         }
     }
 
-    pub fn update_zoom_bound_x(&mut self, new_x_bound: &ZoomBound) {
+    pub fn maybe_set_state_for_y_bound_generation(&mut self, new_state: bool) {
+        if let Some(plot_data) = &mut self.processed_plot_data {
+            plot_data.set_state_for_y_bound_generation(new_state);
+        }
+    }
+
+    pub fn update_zoom_bound_y(&mut self, new_y_bound: &ZoomBound) -> ZoomBound2D {
+        let new_bound = ZoomBound2D {
+            x: self.zoom_bounds.clone().unwrap_or_default().x,
+            y: new_y_bound.clone(),
+        };
+        self.zoom_bounds = Some(new_bound.clone());
+        new_bound
+    }
+
+    pub fn update_zoom_bound_x(&mut self, new_x_bound: &ZoomBound) -> ZoomBound2D {
         let new_bound = ZoomBound2D {
             x: new_x_bound.clone(),
-            y: self
-                .zoom_bounds
-                .clone()
-                .expect("no bounds defined, updating impossible?")
-                .y,
+            y: self.zoom_bounds.clone().unwrap_or_default().y,
         };
-        self.zoom_bounds = Some(new_bound);
+        self.zoom_bounds = Some(new_bound.clone());
+        new_bound
     }
 
     pub fn update(&mut self, message: MessagePlotting) {
@@ -188,14 +207,16 @@ impl ScreenSingleFlowPlotting {
 
                 self.tcp_flow.flow_id = Some(reference_id);
                 self.tcp_flow.selected_series = None;
-                let new_zoom = retrieve_default_zoom_for_one_flow(&self.application_settings, &self.tcp_flow);
+                let new_zoom =
+                    retrieve_default_zoom_for_one_flow(&self.application_settings, &self.tcp_flow);
                 self.zoom_bounds = Some(new_zoom);
             }
 
             MessagePlotting::FlowFeatureSelected(added_feature_id) => {
                 self.tcp_flow.add_new_series(added_feature_id);
                 // updating max_zoom for Y-Direction!
-                let new_zoom = retrieve_default_zoom_for_one_flow(&self.application_settings, &self.tcp_flow);
+                let new_zoom =
+                    retrieve_default_zoom_for_one_flow(&self.application_settings, &self.tcp_flow);
                 self.zoom_bounds = Some(new_zoom);
                 self.fetch_and_update_plot_data();
                 // querying data to be displayed, if rendering is enabled, skipping otherwise
@@ -206,7 +227,8 @@ impl ScreenSingleFlowPlotting {
                 if self.tcp_flow.selected_series.is_none() {
                     self.render_chart = false;
                 }
-                let new_zoom = retrieve_default_zoom_for_one_flow(&self.application_settings, &self.tcp_flow);
+                let new_zoom =
+                    retrieve_default_zoom_for_one_flow(&self.application_settings, &self.tcp_flow);
                 self.zoom_bounds = Some(new_zoom);
                 self.fetch_and_update_plot_data();
             }
@@ -237,15 +259,19 @@ impl ScreenSingleFlowPlotting {
                 self.update_zoom_plot_data_and_cache();
                 match event {
                     iced::mouse::Event::ButtonPressed(iced::mouse::Button::Left) => {
+                        self.maybe_set_state_for_y_bound_generation(false);
                         self.set_current_position(point);
                         self.pressed_cursor = false;
                         self.set_cursor_state_and_pos(true);
                     }
                     iced::mouse::Event::ButtonReleased(iced::mouse::Button::Left) => {
+                        self.maybe_set_state_for_y_bound_generation(false);
                         self.set_current_position(point);
                         self.set_cursor_state_and_pos(false);
-                        let plotting_data = self.processed_plot_data.as_mut().expect("no plotting data");
-                        let new_zoom = generate_zoom_bounds_from_coordinates_in_data(&plotting_data);
+                        let plotting_data =
+                            self.processed_plot_data.as_mut().expect("no plotting data");
+                        let new_zoom =
+                            generate_zoom_bounds_from_coordinates_in_data(&plotting_data);
                         self.zoom_bounds = Some(new_zoom.clone());
                         plotting_data.zoom_bounds = new_zoom;
                         if self.render_chart {
@@ -255,7 +281,11 @@ impl ScreenSingleFlowPlotting {
                     }
                     iced::mouse::Event::ButtonPressed(iced::mouse::Button::Right) => {
                         // resetting zoom to default!
-                        let new_zoom = retrieve_default_zoom_for_one_flow(&self.application_settings, &self.tcp_flow);
+                        self.maybe_set_state_for_y_bound_generation(false);
+                        let new_zoom = retrieve_default_zoom_for_one_flow(
+                            &self.application_settings,
+                            &self.tcp_flow,
+                        );
                         self.zoom_bounds = Some(new_zoom);
                         self.update_zoom_plot_data_and_cache();
                         // self.fetch_and_update_plot_data();
@@ -264,7 +294,8 @@ impl ScreenSingleFlowPlotting {
                 }
             }
             MessagePlotting::ZoomResetRequested => {
-                let new_zoom = retrieve_default_zoom_for_one_flow(&self.application_settings, &self.tcp_flow);
+                let new_zoom =
+                    retrieve_default_zoom_for_one_flow(&self.application_settings, &self.tcp_flow);
                 self.zoom_bounds = Some(new_zoom);
                 self.update_zoom_plot_data_and_cache();
             }
@@ -273,7 +304,8 @@ impl ScreenSingleFlowPlotting {
                     lower: lower_bound_x,
                     upper: self.zoom_bounds.clone().unwrap_or_default().x.upper,
                 };
-                self.update_zoom_bound_x(&new_x_bound);
+                let _ = self.update_zoom_bound_x(&new_x_bound);
+                self.maybe_set_state_for_y_bound_generation(true);
                 self.update_zoom_plot_data_and_cache();
             }
             MessagePlotting::SliderZoomRX(upper_bound_x) => {
@@ -281,7 +313,9 @@ impl ScreenSingleFlowPlotting {
                     lower: self.zoom_bounds.clone().unwrap_or_default().x.lower,
                     upper: upper_bound_x,
                 };
-                self.update_zoom_bound_x(&new_x_bound);
+
+                let _ = self.update_zoom_bound_x(&new_x_bound);
+                self.maybe_set_state_for_y_bound_generation(true);
                 self.update_zoom_plot_data_and_cache();
             }
             MessagePlotting::SliderSplitChartHeight(new_height) => {
